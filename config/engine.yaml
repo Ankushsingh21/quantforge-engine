@@ -1,0 +1,146 @@
+# QuantForge Engine Configuration
+
+# File: config/engine.yaml
+
+# -Service Identity
+
+service:
+  id: "quantforge-engine-01"
+  name: "QuantForge Trading Engine"
+  version: "1.0.0"
+  environment: "production" # production | paper | development
+
+# Upstox API
+
+upstox:
+  api_key: "${UPSTOX_API_KEY}" # From environment / Vault
+  access_token: "${UPSTOX_ACCESS_TOKEN}" # Injected at startup
+  api_base_url: "https://api.upstox.com/v2"
+  websocket_url: "wss://api.upstox.com/v2/feed/market-data-feed"
+
+  websocket:
+    heartbeat_timeout_ms: 30000
+    reconnect_initial_ms: 1000
+    reconnect_max_ms: 30000
+    reconnect_jitter_ms: 500
+    max_instruments: 3000 # Upstox subscription limit
+
+  rest:
+    timeout_ms: 10000
+    max_retries: 3
+    retry_backoff_ms: 500
+    rate_limit_per_minute: 20 # upstoc API rate limit
+
+#Thread & CPU Configuration
+
+threads:
+  market_data_io: 0
+  tick_normalizer: 1 # CPU core
+  risk_engine: 6
+  oms_executor: 7
+  fill_processor: 8
+  portfolio_updater: 9
+  kafka_publisher: 10
+  heartbeat_monitor: 11
+  # Strategies: cores 2-5 (assigned per strategy in strategy config)
+
+memory:
+  arena_size_mb: 64
+  order_pool_size: 10000
+  tick_buffer_capacity: 65536 # Must be power of 2
+  kafka_buffer_size: 1048576 # 1M messages
+
+#- Infrastructure
+
+redis:
+  url: "${REDIS_URL:-redis://localhost:6379}"
+  db: 0
+  password: "${REDIS_PASSWORD:-}"
+  pool_size: 8
+
+kafka:
+  brokers: "${KAFKA_BROKERS:-localhost:9092}"
+  client_id: "quantforge-engine"
+
+  producer:
+    acks: "1" #acks all for order events
+  compression: "1z4"
+  batch_size: 65536
+  linger_ms: 5
+  queue_buffer_max_msgs: 1000000
+
+topics:
+  ticks: "market.ticks"
+  candles: "market.ohlc"
+  depth: "market.depth"
+  options: "market.options_chain"
+  orders_new: "orders.new"
+  orders_fills: "orders.fills"
+  orders_status: "orders.status"
+  risk_alerts: "risk.alerts"
+  risk_kill: "risk.kill"
+  portfolio: "portfolio.updates"
+  singals_ml: "signals.ml"
+  heartbeat: "system.heartbeat"
+
+#----------------Risk Configuration----------------------
+
+risk:
+  global:
+  max_portfolio_daily_loss: 500000 # Rs 5 lakh
+  max_portfolio_exposure: 10000000 # Rs 1 crore
+  max_portfolio_drawdown_pct: 0.05 # 5% from peak
+
+  pre_market_halt_until: "09:14:00" # Don't trade before this
+  eod_flatten_at: "15:25:00" # Flatten before market close
+
+  orders:
+    max_order_size_value: 100000 # Rs 1 lakh per order
+    max_orders_per_second: 10 #Global rate limit
+    duplicate_window_ms: 5000 # Dedup window
+
+#-------------Market Data Configuration-------------------
+
+market_data:
+  tick_stale_threshold_ns: 5000000000 #5 seconds
+  candle_intervals: [60, 300, 900, 86400] # Seconds
+  priority_instruments: [] # Populated from active strategies
+
+  sequence_gap_alert_threshold: 10 #Alert if gap > 10 ticks
+
+#--------Logging------------------------
+
+logging:
+  level: "info" #trace debug|info|warn|error critical
+  async: "info"
+  queue_size: 10000
+
+  sinks:
+    console:
+    enabled: true
+    colored: true
+  file:
+    enabled: true
+    path: "logs/engine.log"
+    max_size_mb: 100
+    max_files: 10
+  loki:
+    enabled: "${LOKI_ENABLED:-false}"
+    url: "${LOKI_URL:-http:///loki:3100}"
+
+#------------Metrics--------------------
+
+metrics:
+  prometheus:
+    enabled: true
+    port: 9101
+    path: "/metrics"
+
+  report_interval_ms: 10000 # Report latency histograms every 105
+
+#----Mode-------------------
+
+mode:
+  paper_trading: "$(PAPER TRADING:-True)" # If true: simulate orders, no real execution
+  dry_run: false #If true: start but don't submit orders
+  backtest: false # Used when running in backtest mode

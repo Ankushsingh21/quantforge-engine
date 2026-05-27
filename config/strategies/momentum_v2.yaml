@@ -1,0 +1,130 @@
+#Strategy: Momentum v2 Configuration
+#File: config/strategies/momentum_v2.yam1
+
+strategy:
+  id: "momentum v2"
+  version: "2.1.0"
+  type: "momentum"
+  language: "cpp" #cpp | python | hybrid | onnx
+  enabled: true
+  paper mode: false
+
+description: "EMA crossover momentum with volume confirmation"
+author: "quant-team"
+
+#CPU core allocation (must be in strategies range: 2-5)
+allocated_core: 2
+
+# Subscribed instruments (Upstox instrument key format)
+instruments:
+  - "NSE_EQ|INE040401034" # HDFC Bank
+  - "NSE_EQ|INE009A01021" # Infosys
+  - "NSE_EQ|INE030A01027" # Reliance
+  - "NSE_EQ|INE002A01018" #State Bank of India
+  - "NSE_EQ|INE467801029" # Bharti Airtel
+
+# Market data subscriptions needed
+market_data:
+  subscribe_ticks: true
+  subscribe_depth: false # Don't need order book for this strategy
+  subscribe_ohle: true #Don't need order book for this strategy
+  ohlc intervals: [60, 300] # 1-min and 5-min candles
+
+# Strategy parameters (can be hot-reloaded)
+params:
+  #Indicators
+  ema_fast_period: 8
+  ema_slow_period: 21
+  atr_period: 14
+  volume_ma_period: 20
+
+  # Signal generation
+  signal_threshold: 0.005 # Min normalized momentum to trigger
+  min_vol_ratio: 1.5 #Min volume vs MA to confirm signal
+
+  #Position sizing
+  risk_per_trade_pct: 0.02 #Risk 2% of capital per trade
+  atr_multiplier: 2.0 # Stop loss distance in ATR multiples
+
+  #Exit rules
+  take_profit_pct: 0.04 # 4% take profit
+  max_hold_minutes: 120 # Force exit after 2 hours
+
+  #Intraday settings
+  allow_trades_after: "09:20" # No trades in first 5 minutes
+  allow_trades_before: "15:15" # Stop new entries before EOD flatten
+
+#ML model (optional leave empty if not using ML)
+ml_model: "" # Set to ONNX model path to enable ML signals
+
+# Risk limits for this strategy
+risk:
+  max_daily_loss: 50000 # Rs 50,000
+  max_drawdown_pct: 0.10 # 10% drawdown from peak
+  max_capital_allocation: 1000000 # Rs 10 lakh
+  max_position_value: 200000 # Rs 2 lakh per instrument
+  max_net_delta: 0 # Not applicable for equity-only
+  max_net_vega: 0 # Not applicable
+  max_orders_per_minute: 20
+  max_orders_per_second: 5
+  max_single_order_value: 200000
+
+---
+#Strategy: Options Short Strangle
+#File: config/strategies/short_strangle_v1.yaml
+
+strategy:
+  id: "short_strangle_v1"
+  version: "1.0.0"
+  type: "options_short_strangle"
+  language: "cpp" #cpp | python | hybrid | onnx
+  enabled: false
+  paper mode: true
+
+  allocated_core: 3
+
+  instruments:
+    - "NSE_INDEX|NIFTY" # Nifty 50 Index
+    #- "NSE_OPT|NIFTY|20240926|CALL|19500" # Nifty 19500 Call
+    #- "NSE_OPT|NIFTY|20240926|PUT|18500" # Nifty 18500 Put
+    # option contracst will be dynamically selected based on ATM strike
+
+market_data:
+  subscribe_ticks: true
+  subscribe_depth: true
+  subscribe_ohlc: true #Need order book for options
+  subscribe_options_chain: true
+  options_underlying: "NSE_INDEX|Nifty 50"
+
+params:
+  #Strike selection
+  otm_offset_pct: 0.02 # Sell strikes 2% OTM
+  min_dte: 7 # Min days to expiry
+  max_dte: 21 # Max days to expiry (prefer weekly)
+  target_delta: 0.15 # Target delta for short strikes
+
+  # Entry conditions
+  min_iv_rank: 0.50 #Only sell when IV rank > 50%
+  vix_threshold: 25.0 # Don't sell if VIX > 25 (too cheap)
+
+  # Position management
+  profit_target_pct: 0.50 #Close at 50% of max profit
+  loss_limit_pct: 2.0 #Close if loss 2x premium received
+  dte_exit: 2 #Close if 2 DTE remaining
+
+  # Delta hedging
+  delta_hedge_threshold: 0.20 # Hedge when net delta > 0.20
+
+  # Entry sizing
+  max_lot_size: 5 # Max NIFTY lots per strangle
+
+risk:
+  max_daily_loss: 100000 # Rs 1 lakh
+  max_drawdown_pct: 0.15 # 15% drawdown from peak
+  max_capital_allocation: 2000000 # Rs 20 lakh
+  max_position_value: 500000 # Rs 5 lakh per strangle
+  max_net_delta: 0.20 # Max net delta exposure
+  max_net_vega: -50000 # Vega not applicable for short strangle
+  max_orders_per_minute: 10
+  max_orders_per_second: 2
+  max_single_order_value: 500000
