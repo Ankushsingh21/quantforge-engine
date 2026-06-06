@@ -21,7 +21,7 @@
 | 05  | [Live Strategy Architecture](./docs/05_live_strategy.cpp.md)    | C++ strategy engine, plugins, pseudo-code                         |
 | 06  | [Backtesting Architecture](./docs/06_backtesting.md)            | Vectorized + event-driven, distributed, code sharing              |
 | 07  | [Database Architecture](./docs/07_database_architecture.md)     | ClickHouse, QuestDB, Redis, Kafka, kdb+, hot/cold storag          |
-| 08  | [Infrastructure & Deployment)](./docs/8_infrastructure.md)      | Docker, KBS, CI/CD, Prometheus, Grafana, ELK                      |
+| 08  | [Infrastructure & Deployment](./docs/8_infrastructure.md)       | Docker, KBS, CI/CD, Prometheus, Grafana, ELK                      |
 | 09  | [Risk & Portfolio Systems](./docs/09_risk_portfolio.md)         | Pre/post-trade risk, Greeks, VaR, kill switches                   |
 | 10  | [Tech Stack Recommendations](./docs/10_tach_stack.md)           | Full stack comparison with tradeoffs                              |
 | 11  | [Latency Architecture](./docs/11_latency.md)                    | Latency budgets, Python vs C++, optimization priorities           |
