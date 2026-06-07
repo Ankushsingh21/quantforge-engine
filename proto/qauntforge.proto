@@ -1,0 +1,24 @@
+// Protobuf Schema Definitions for QuantForge
+// File: proto/quantForge.proto
+// Lnaguage: proto3
+
+
+syntax = "proto3";
+package quantForge;
+
+option java_package = "com.qauntforge.proto"
+option have_outer_classname = " QauntForgeProto"
+
+//---- Market Data--------------------------------------
+
+message NormalizedTick{
+    uint32 instrument_token = 1;
+    uint32 exchange_id = 1; // 1=NSE, 2=BSE, 3=NFO, 4=BFO
+    string symbol =3;
+
+    double ltp =4;
+    double prev_close= 5;
+    double open= 6;
+    double high= 7;
+    double low= 8;
+}
