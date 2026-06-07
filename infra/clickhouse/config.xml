@@ -1,0 +1,74 @@
+<!-- infra/clickhouse/config.xml -->
+<!-- Custom ClickHouse config overlay for QuantForge -->
+
+<clickhouse>
+
+    <!-- Allow connecting from any IP (dev environment only; restrict in production) -->
+    <listen_host>0.0.0.0</listen_host>
+
+    <!-- Memory settings for trading workload -->
+    <max_server_memory_usage_to_ram_ratio>0.8</max_server_memory_usage_to_ram_ratio>
+    <max_memory_usage>8589934592</max_memory_usage> <!-- 8 GB per query -->
+
+    <!-- Async inserts: batch ticks from the Python Kafka consumer -->
+    <async_insert>1</async_insert>
+    <async_insert_threads>4</async_insert_threads>
+    <async_insert_max_data_size>10485760</async_insert_max_data_size> <!-- 10 MB -->
+    <async_insert_busy_timeout_ms>200</async_insert_busy_timeout_ms> <!-- 200ms batch window -->
+    <async_insert_stale_timeout_ms>1000</async_insert_stale_timeout_ms>
+
+    <!-- Compression for tick data -->
+    <compression>
+        <case>
+            <method>lz4</method>
+        </case>
+    </compression>
+
+    <!-- Query log (for performance analysis) -->
+    <query_log>
+        <database>system</database>
+        <table>query_log</table>
+        <partition_by>toYYYYMM(event_date)</partition_by>
+        <ttl>event_date + INTERVAL 30 DAY DELETE</ttl>
+        <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+    </query_log>
+
+    <!-- Allow dropping tables (for testing) -->
+    <allow_drop_detached>1</allow_drop_detached>
+
+    <!-- Users configuration -->
+    <users>
+        <default>
+            <password></password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+            <access_management>1</access_management>
+        </default>
+    </users>
+
+    <profiles>
+        <default>
+            <max_threads>8</max_threads>
+            <max_block_size>65536</max_block_size>
+            <preferred_block_size_bytes>1048576</preferred_block_size_bytes>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+        </default>
+    </profiles>
+
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+
+</clickhouse>

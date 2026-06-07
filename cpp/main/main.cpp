@@ -72,7 +72,7 @@ std::string load_token(const std::string &token_file = ".token") {
 
     // Try the Python quantforge directory
 
-    std::ifstream f2("quantforge/.token");
+    std::ifstream f2("../quantforge/.token");
 
     if (f2.is_open()) {
 
@@ -88,7 +88,7 @@ std::string load_token(const std::string &token_file = ".token") {
     }
 
     throw std::runtime_error("Access token file not found: " + token_file +
-                             "\nRun: python quantforge/src/auth.py");
+                             "\nRun: cd ../quantforge  && python src/auth.py");
   }
 
   std::string tok;

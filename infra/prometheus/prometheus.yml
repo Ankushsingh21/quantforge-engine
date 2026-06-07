@@ -1,0 +1,64 @@
+# infra/prometheus/prometheus.yml
+# Prometheus configuration for QuantForge monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+  external_labels:
+    environment: "quantforge-dev"
+
+# Alert rule files
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# Alertmanager target
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+scrape_configs:
+  # QuantForge C++ Engine (prometheus-cpp HTTP endpoint)
+  - job_name: "quantforge-engine"
+    static_configs:
+      - targets: ["localhost:9101"]
+
+    scrape_interval: 5s
+    metrics_path: /metrics
+
+  # Python FastAPI analytics service
+  - job_name: "quantforge-python"
+    static_configs:
+      - targets: ["quantforge-python:8080"]
+
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Redis
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis:6379"]
+
+    scrape_interval: 15s
+
+  # Kafka (JMX exporter)
+  - job_name: "kafka"
+    static_configs:
+      - targets: ["kafka:7071"]
+
+    scrape_interval: 30s
+
+  # ClickHouse
+  - job_name: "clickhouse"
+    static_configs:
+      - targets: ["clickhouse:9363"]
+
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Prometheus self
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

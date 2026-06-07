@@ -1,0 +1,696 @@
+{
+  "__inputs": [],
+  "__requires": [],
+
+  "annotations": {
+    "list": []
+  },
+
+  "description": "QuantForge Live Trading Dashboard",
+
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+
+  "panels": [
+
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "Market Data",
+      "type": "row"
+    },
+
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        }
+      },
+
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+
+      "id": 1,
+
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background"
+      },
+
+      "title": "Tick Rate (ticks/s)",
+
+      "type": "stat",
+
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+
+          "expr": "rate(quantforge_ticks_total[10s])",
+
+          "legendFormat": "{{symbol}}"
+        }
+      ]
+    },
+
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs"
+        }
+      },
+
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+
+      "id": 2,
+
+      "options": {
+        "bucketOffset": 0
+      },
+
+      "title": "Tick-to-Order Latency (µs)",
+
+      "type": "histogram",
+
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+
+          "expr": "quantforge_tick_to_order_latency_us_bucket",
+
+          "legendFormat": "{{le}}"
+        }
+      ]
+    },
+
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+
+          "color": {
+            "mode": "thresholds"
+          },
+
+          "thresholds": {
+            "mode": "absolute",
+
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+
+      "id": 3,
+
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+
+        "textMode": "value_and_name",
+
+        "colorMode": "background"
+      },
+
+      "title": "Market Data Reconnects",
+
+      "type": "stat",
+
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+
+          "expr": "quantforge_md_reconnects_total",
+
+          "legendFormat": "Reconnects"
+        }
+      ]
+    },
+
+    {
+      "collapsed": false,
+
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+
+      "id": 101,
+
+      "title": "Orders & Fills",
+
+      "type": "row"
+    },
+
+   {
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "short"
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 12,
+    "x": 0,
+    "y": 8
+  },
+  "id": 4,
+  "title": "Orders Submitted/min",
+  "type": "timeseries",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "rate(quantforge_orders_submitted_total[1m]) * 60",
+      "legendFormat": "{{strategy_id}}"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "short",
+      "color": {
+        "mode": "thresholds"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          },
+          {
+            "color": "orange",
+            "value": 1
+          },
+          {
+            "color": "red",
+            "value": 5
+          }
+        ]
+      }
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 6,
+    "x": 12,
+    "y": 8
+  },
+  "id": 5,
+  "options": {
+    "reduceOptions": {
+      "calcs": [
+        "lastNotNull"
+      ]
+    },
+    "colorMode": "background"
+  },
+  "title": "Rejected Orders",
+  "type": "stat",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_orders_rejected_total",
+      "legendFormat": "Rejects"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "short"
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 6,
+    "x": 18,
+    "y": 8
+  },
+  "id": 6,
+  "options": {
+    "reduceOptions": {
+      "calcs": [
+        "lastNotNull"
+      ]
+    },
+    "colorMode": "background"
+  },
+  "title": "Fill Rate (fills/min)",
+  "type": "stat",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "rate(quantforge_fills_total[1m]) * 60",
+      "legendFormat": "Fills"
+    }
+  ]
+},
+{
+  "collapsed": false,
+  "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 14
+  },
+  "id": 102,
+  "title": "Portfolio & PnL",
+  "type": "row"
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "currencyINR"
+    }
+  },
+  "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 15
+  },
+  "id": 7,
+  "title": "Strategy PnL (Unrealised)",
+  "type": "timeseries",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_strategy_unrealized_pnl",
+      "legendFormat": "{{strategy_id}}"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "currencyINR",
+      "color": {
+        "mode": "thresholds"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "red",
+            "value": null
+          },
+          {
+            "color": "orange",
+            "value": 0
+          },
+          {
+            "color": "green",
+            "value": 1000
+          }
+        ]
+      }
+    }
+  },
+  "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 15
+  },
+  "id": 8,
+  "options": {
+    "reduceOptions": {
+      "calcs": [
+        "lastNotNull"
+      ]
+    },
+    "colorMode": "background"
+  },
+  "title": "Realised PnL Today",
+  "type": "stat",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_strategy_realized_pnl",
+      "legendFormat": "{{strategy_id}}"
+    }
+  ]
+},
+{
+  "collapsed": false,
+  "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 23
+  },
+  "id": 103,
+  "title": "Risk & Controls",
+  "type": "row"
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "color": {
+        "mode": "thresholds"
+      },
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": 0
+          },
+          {
+            "color": "red",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "mappings": [
+      {
+        "type": "value",
+        "options": {
+          "0": {
+            "text": "SAFE",
+            "color": "green"
+          },
+          "1": {
+            "text": "KILL SWITCH ACTIVE",
+            "color": "red"
+          }
+        }
+      }
+    ]
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 8,
+    "x": 0,
+    "y": 24
+  },
+  "id": 9,
+  "options": {
+    "reduceOptions": {
+      "calcs": [
+        "lastNotNull"
+      ]
+    },
+    "textMode": "value",
+    "colorMode": "background"
+  },
+  "title": "Global Kill Switch",
+  "type": "stat",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_global_kill_switch",
+      "legendFormat": "Kill Switch"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "percent",
+      "min": 0,
+      "max": 100
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 8,
+    "x": 8,
+    "y": 24
+  },
+  "id": 10,
+  "options": {
+    "reduceOptions": {
+      "calcs": [
+        "lastNotNull"
+      ]
+    }
+  },
+  "title": "Daily Loss Limit Used (%)",
+  "type": "gauge",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_daily_loss_pct{strategy_id=~\".*\"} * 100",
+      "legendFormat": "{{strategy_id}}"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "short"
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 8,
+    "x": 16,
+    "y": 24
+  },
+  "id": 11,
+  "title": "Rate Limiter Tokens",
+  "type": "timeseries",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_rate_limiter_tokens",
+      "legendFormat": "{{strategy_id}}"
+    }
+  ]
+},
+{
+  "collapsed": false,
+  "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 30
+  },
+  "id": 104,
+  "title": "System Health",
+  "type": "row"
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "short"
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 12,
+    "x": 0,
+    "y": 31
+  },
+  "id": 12,
+  "title": "Engine Heartbeat (seconds since last)",
+  "type": "timeseries",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "time() - quantforge_last_heartbeat_timestamp",
+      "legendFormat": "Seconds since heartbeat"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "bytes"
+    }
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 12,
+    "x": 12,
+    "y": 31
+  },
+  "id": 13,
+  "title": "Arena Allocator Used",
+  "type": "timeseries",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus"
+      },
+      "expr": "quantforge_arena_bytes_used",
+      "legendFormat": "{{thread}}"
+    }
+  ]
+},
+{
+  "datasource": {
+    "type": "loki",
+    "uid": "loki"
+  },
+  "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 37
+  },
+  "id": 14,
+  "options": {
+    "dedupStrategy": "none",
+    "enableLogDetails": true,
+    "showTime": true
+  },
+  "title": "Engine Logs (ERROR+)",
+  "type": "logs",
+  "targets": [
+    {
+      "datasource": {
+        "type": "loki"
+      },
+      "expr": "{app=\"quantforge-engine\"} |= \"ERROR\"",
+      "legendFormat": ""
+    }
+  ]
+}],
+"refresh": "5s",
+"schemaVersion": 39,
+"tags": [
+  "quantforge",
+  "trading"
+],
+"templating": {
+  "list": []
+},
+"time": {
+  "from": "now-6h",
+  "to": "now"
+},
+"timepicker": {},
+"timezone": "browser",
+"title": "QuantForge Trading",
+"uid": "quantforge-trading",
+"version": 1
+}
+

@@ -1,0 +1,84 @@
+# QuantForge Python Services Dockerfile
+
+FROM python:3.12-slim AS base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc g++ \
+    libta-lib-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY python/pyproject.toml python/requirements.txt ./
+
+RUN pip install --no-cache-dir -e ".[prod]"
+
+# Copy source
+COPY python/quantforge/ ./quantforge/
+COPY proto/ ./proto/
+
+# Generate protobuf Python bindings
+RUN python -m grpc_tools.protoc \
+    -I proto/ \
+    --python_out=quantforge/generated/ \
+    proto/quantforge.proto
+
+# Non-root user
+RUN useradd -m -u 1001 quantforge
+RUN chown -R quantforge:quantforge /app
+
+USER quantforge
+
+# ── ML Server ───────────────────────────────────────────────
+
+FROM base AS ml-server
+
+EXPOSE 8090
+
+CMD [
+"uvicorn",
+"quantforge.ml.model_server:app",
+"--host",
+"0.0.0.0",
+"--port",
+"8090"
+]
+
+# ── Analytics Service ───────────────────────────────────────
+
+FROM base AS analytics
+
+EXPOSE 8080
+
+CMD [
+"uvicorn",
+"quantforge.analytics.service:app",
+"--host",
+"0.0.0.0",
+"--port",
+"8080"
+]
+
+# ── Jupyter (Research) ──────────────────────────────────────
+
+FROM base AS jupyter
+
+RUN pip install --no-cache-dir \
+    jupyterlab==4.1.0 \
+    ipywidgets \
+    plotly
+
+EXPOSE 8888
+
+CMD [
+"jupyter",
+"lab",
+"--ip=0.0.0.0",
+"--port=8888",
+"--no-browser",
+"--NotebookApp.token=''",
+"--notebook-dir=/notebooks"
+]

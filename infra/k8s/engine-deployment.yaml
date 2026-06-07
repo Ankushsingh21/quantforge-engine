@@ -1,0 +1,166 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: quantforge-engine
+  namespace: trading
+  labels:
+    app: quantforge-engine
+    version: v1.0.0
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: quantforge-engine
+
+  template:
+    metadata:
+      labels:
+        app: quantforge-engine
+
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9101"
+        prometheus.io/path: "/metrics"
+
+    spec:
+      nodeSelector:
+        node.kubernetes.io/role: trading
+        topology.kubernetes.io/zone: ap-south-1a
+
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "trading"
+          effect: "NoSchedule"
+
+      # Guarantee exclusive CPU allocation
+      priorityClassName: high-priority
+
+      containers:
+        - name: engine
+          image: quantforge/engine:v1.0.0
+          imagePullPolicy: Always
+
+          args:
+            - /app/config/engine.yaml
+
+          resources:
+            requests:
+              cpu: "8"
+              memory: "16Gi"
+
+            limits:
+              cpu: "16"
+              memory: "32Gi"
+
+          # Allow real-time thread priorities inside container
+          securityContext:
+            capabilities:
+              add:
+                - SYS_NICE
+                - IPC_LOCK # for mlock (memory locking)
+
+            runAsNonRoot: false
+
+          env:
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: quantforge-secrets
+                  key: redis_url
+
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: quantforge-config
+                  key: kafka_brokers
+
+            - name: PAPER_TRADING
+              value: "false"
+
+          envFrom:
+            - secretRef:
+                name: quantforge-token # Upstox access token
+
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+
+            - name: logs
+              mountPath: /app/logs
+
+          ports:
+            - name: metrics
+              containerPort: 9101
+              protocol: TCP
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9101
+
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 9101
+
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+      volumes:
+        - name: config
+          configMap:
+            name: quantforge-engine-config
+
+        - name: logs
+          emptyDir: {}
+
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: quantforge-engine
+  namespace: trading
+
+spec:
+  selector:
+    app: quantforge-engine
+
+  ports:
+    - name: metrics
+      port: 9101
+      targetPort: 9101
+
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: quantforge-config
+  namespace: trading
+
+data:
+  kafka_brokers: "kafka-cluster.kafka.svc.cluster.local:9092"
+  log_level: "info"
+  paper_trading: "false"
+
+---
+# Horizontal Pod Autoscaler (disabled for trading engine - single instance only)
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+
+# NOTE: DO NOT scale the trading engine horizontally.
+# Multiple instances would duplicate orders.

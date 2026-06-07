@@ -1,0 +1,30 @@
+apiVersion:1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestination: []
+  
+
+  -name: ClickHouse
+    type:grafana-clickhouse-datasource
+    access: proxy
+    jsonData:
+      host: clickhouse
+      port: 9000
+      username: default
+      defaultDatabase: quantforge
+    secureJsonData:
+      password: ""
+
+  -name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      httpMethod: POST    
