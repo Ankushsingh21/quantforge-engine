@@ -1,24 +1,286 @@
 // Protobuf Schema Definitions for QuantForge
-// File: proto/quantForge.proto
-// Lnaguage: proto3
-
+// File: proto/quantforge.proto
+// Language: proto3
 
 syntax = "proto3";
-package quantForge;
 
-option java_package = "com.qauntforge.proto"
-option have_outer_classname = " QauntForgeProto"
+package quantforge;
 
-//---- Market Data--------------------------------------
+option java_package = "com.quantforge.proto";
+option java_outer_classname = "QuantForgeProto";
 
-message NormalizedTick{
-    uint32 instrument_token = 1;
-    uint32 exchange_id = 1; // 1=NSE, 2=BSE, 3=NFO, 4=BFO
-    string symbol =3;
+// ─── Market Data ─────────────────────────────────────────────
 
-    double ltp =4;
-    double prev_close= 5;
-    double open= 6;
-    double high= 7;
-    double low= 8;
+message NormalizedTick {
+  uint32 instrument_token = 1;
+  uint32 exchange_id = 2;   // 1=NSE, 2=BSE, 3=NFO, 4=BFO
+  string symbol = 3;
+
+  double ltp = 4;
+  double prev_close = 5;
+  double open = 6;
+  double high = 7;
+  double low = 8;
+
+  uint64 volume = 9;
+  uint64 oi = 10;           // Open interest
+
+  repeated DepthLevel bid_depth = 11;  // Top 5 bids
+  repeated DepthLevel ask_depth = 12;  // Top 5 asks
+
+  int64 exchange_ts_ns = 13;       // Exchange timestamp (nanoseconds)
+  int64 recv_ts_ns = 14;           // Local receive timestamp
+  int64 network_latency_ns = 15;
+
+  bool is_stale = 16;
+  bool is_auction = 17;
+  uint32 sequence_no = 18;
+}
+
+message DepthLevel {
+  double price = 1;
+  uint32 qty = 2;
+  uint32 orders = 3;
+}
+
+message Candle {
+  uint32 instrument_token = 1;
+  string symbol = 2;
+  uint32 interval_seconds = 3;   // 60, 300, 900, 86400
+
+  double open = 4;
+  double high = 5;
+  double low = 6;
+  double close = 7;
+  uint64 volume = 8;
+  uint64 oi = 9;
+
+  int64 open_ts_ns = 10;
+  int64 close_ts_ns = 11;
+  uint32 tick_count = 12;
+  bool is_complete = 13;
+}
+
+message OptionsSnapshot {
+  uint32 underlying_token = 1;
+  double underlying_ltp = 2;
+  int64 snapshot_ts_ns = 3;
+
+  repeated OptionsStrike strikes = 4;
+  double atm_strike = 5;
+  double atm_iv = 6;
+}
+
+message OptionsStrike {
+  double strike_price = 1;
+  int64 expiry_epoch_ms = 2;
+
+  double ce_ltp = 3;
+  double ce_iv = 4;
+  double ce_delta = 5;
+  double ce_gamma = 6;
+  double ce_theta = 7;
+  double ce_vega = 8;
+  uint64 ce_oi = 9;
+
+  double pe_ltp = 10;
+  double pe_iv = 11;
+  double pe_delta = 12;
+  double pe_gamma = 13;
+  double pe_theta = 14;
+  double pe_vega = 15;
+  uint64 pe_oi = 16;
+
+  double put_call_ratio = 17;
+}
+
+// ─── Orders ─────────────────────────────────────────────────
+
+enum Side {
+  SIDE_UNSPECIFIED = 0;
+  BUY = 1;
+  SELL = 2;
+}
+
+enum OrderType {
+  ORDER_TYPE_UNSPECIFIED = 0;
+  MARKET = 1;
+  LIMIT = 2;
+  STOP_LOSS = 3;
+  STOP_LOSS_MARKET = 4;
+}
+
+enum OrderProduct {
+  PRODUCT_UNSPECIFIED = 0;
+  INTRADAY = 1;        // MIS
+  DELIVERY = 2;        // CNC
+  CARRY_FORWARD = 3;   // NRML (F&O)
+}
+
+enum OrderStatus {
+  STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  SUBMITTED = 2;
+  OPEN = 3;
+  PARTIAL = 4;
+  FILLED = 5;
+  CANCELLED = 6;
+  REJECTED = 7;
+}
+
+message OrderRequest {
+  string strategy_id = 1;
+  uint32 instrument_token = 2;
+  string instrument_key = 3;   // Upstox instrument key format
+  Side side = 4;
+  OrderType order_type = 5;
+  OrderProduct product = 6;
+  int32 quantity = 7;
+
+  double limit_price = 8;      // For LIMIT orders
+  double trigger_price = 9;    // For SL orders
+
+  string tag = 10;             // Strategy-defined label
+  double signal_strength = 11; // Optional: [-1, 1]
+  double stop_loss_price = 12;
+  double take_profit_price = 13;
+
+  int64 request_ts_ns = 14;
+}
+
+message OrderAck {
+  string order_id = 1;            // Local order ID
+  string exchange_order_id = 2;   // Upstox / exchange order ID
+  int64 ack_ts_ns = 3;
+}
+
+message Fill {
+  string order_id = 1;
+  string fill_id = 2;             // Exchange fill ID (for dedup)
+  string strategy_id = 3;
+  uint32 instrument_token = 4;
+
+  Side side = 5;
+  int32 quantity = 6;
+  double price = 7;
+  double commission = 8;
+
+  int64 fill_ts_ns = 9;
+  bool is_partial = 10;
+}
+
+message OrderReject {
+  string order_id = 1;
+  string reason = 2;
+  int32 error_code = 3;
+  int64 ts_ns = 4;
+}
+
+// ─── Risk ───────────────────────────────────────────────────
+
+enum RiskDecision {
+  RISK_PASS = 0;
+  RISK_REJECT_RATE_LIMIT = 1;
+  RISK_REJECT_POSITION = 2;
+  RISK_REJECT_CAPITAL = 3;
+  RISK_REJECT_PRICE_SANITY = 4;
+  RISK_REJECT_GREEK_LIMIT = 5;
+  RISK_REJECT_KILL_SWITCH = 6;
+  RISK_REJECT_MARKET_CLOSED = 7;
+}
+
+message RiskAlert {
+  string strategy_id = 1;
+  string message = 2;
+  int32 severity = 3;   // 1=INFO, 2=WARN, 3=HIGH, 4=CRITICAL
+  int64 ts_ns = 4;
+}
+
+message KillSignal {
+  string strategy_id = 1;   // Empty = global kill
+  string reason = 2;
+  int64 ts_ns = 3;
+}
+
+// ─── Portfolio ──────────────────────────────────────────────
+
+message Position {
+  string strategy_id = 1;
+  uint32 instrument_token = 2;
+  string symbol = 3;
+
+  int32 quantity = 4;
+  double avg_buy_price = 5;
+  double avg_sell_price = 6;
+
+  double realized_pnl = 7;
+  double unrealized_pnl = 8;
+  double current_ltp = 9;
+
+  // Greeks (options only)
+  double delta = 10;
+  double gamma = 11;
+  double theta = 12;
+  double vega = 13;
+}
+
+message PortfolioSnapshot {
+  string strategy_id = 1;
+  repeated Position positions = 2;
+
+  double total_realized_pnl = 3;
+  double total_unrealized_pnl = 4;
+  double net_exposure = 5;
+  double available_capital = 6;
+
+  int64 snapshot_ts_ns = 7;
+
+  // Portfolio Greeks
+  double net_delta = 8;
+  double net_gamma = 9;
+  double net_theta = 10;
+  double net_vega = 11;
+}
+
+// ─── Signals ────────────────────────────────────────────────
+
+message MLSignal {
+  uint32 instrument_token = 1;
+
+  double direction = 2;   // [-1.0, 1.0] - negative = sell signal
+  double strength = 3;    // [0.0, 1.0] - confidence
+
+  int64 timestamp_ns = 4;
+  string model_version = 5;
+  string strategy_id = 6;
+
+  map<string, double> features = 7; // Optional: feature importances
+}
+
+// ─── System ─────────────────────────────────────────────────
+
+message Heartbeat {
+  string service_id = 1;
+  string host = 2;
+  int64 ts_ns = 3;
+  int32 status = 4;   // 0=OK, 1=DEGRADED, 2=DOWN
+
+  map<string, string> metadata = 5;
+}
+
+message SystemEvent {
+  enum Type {
+    UNKNOWN = 0;
+    MARKET_OPEN = 1;
+    MARKET_CLOSE = 2;
+    RECONNECT = 3;
+    RECONNECTED =  4;
+    CONFIG_RELOAD = 5;
+    EOD_COMPLETE = 6;
+  }
+
+  Type type = 1;
+  string source = 2;
+  int64 ts_ns =3;
+  string message = 4;
 }
