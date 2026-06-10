@@ -103,17 +103,17 @@ void RedisClient::publish_position(const std::string &sid,
 
   // Pipeline: 4 HSET fields for this position
 
-  redisPipelineAppend(ctx_, "HSET %s %s:qty %d", key.c_str(), token_s.c_str(),
-                      pos.quantity);
+  redisAppendCommand(ctx_, "HSET %s %s:qty %d", key.c_str(), token_s.c_str(),
+                     pos.quantity);
 
-  redisPipelineAppend(ctx_, "HSET %s %s:avg_price %.4f", key.c_str(),
-                      token_s.c_str(), pos.avg_price);
+  redisAppendCommand(ctx_, "HSET %s %s:avg_price %.4f", key.c_str(),
+                     token_s.c_str(), pos.avg_price);
 
-  redisPipelineAppend(ctx_, "HSET %s %s:upnl %.4f", key.c_str(),
-                      token_s.c_str(), pos.unrealized_pnl);
+  redisAppendCommand(ctx_, "HSET %s %s:upnl %.4f", key.c_str(), token_s.c_str(),
+                     pos.unrealized_pnl);
 
-  redisPipelineAppend(ctx_, "HSET %s %s:rpnl %.4f", key.c_str(),
-                      token_s.c_str(), pos.realized_pnl);
+  redisAppendCommand(ctx_, "HSET %s %s:rpnl %.4f", key.c_str(), token_s.c_str(),
+                     pos.realized_pnl);
 }
 
 void RedisClient::publish_tick(const NormalizedTick &tick) {
@@ -124,23 +124,23 @@ void RedisClient::publish_tick(const NormalizedTick &tick) {
 
   std::string key = "ticks:" + std::to_string(tick.instrument_token);
 
-  redisPipelineAppend(ctx_,
-                      "HSET %s "
-                      "ltp %.4f "
-                      "volume %llu "
-                      "bid1_price %.4f "
-                      "bid1_qty %u "
-                      "ask1_price %.4f "
-                      "ask1_qty %u "
-                      "ts %llu",
+  redisAppendCommand(ctx_,
+                     "HSET %s "
+                     "ltp %.4f "
+                     "volume %llu "
+                     "bid1_price %.4f "
+                     "bid1_qty %u "
+                     "ask1_price %.4f "
+                     "ask1_qty %u "
+                     "ts %llu",
 
-                      key.c_str(), tick.ltp, (unsigned long long)tick.volume,
+                     key.c_str(), tick.ltp, (unsigned long long)tick.volume,
 
-                      tick.bid[0].price, tick.bid[0].qty,
+                     tick.bid[0].price, tick.bid[0].qty,
 
-                      tick.ask[0].price, tick.ask[0].qty,
+                     tick.ask[0].price, tick.ask[0].qty,
 
-                      (unsigned long long)tick.recv_ts_ns);
+                     (unsigned long long)tick.recv_ts_ns);
 }
 
 void RedisClient::publish_risk_counters(const std::string &sid,
@@ -153,13 +153,13 @@ void RedisClient::publish_risk_counters(const std::string &sid,
 
   std::string key = "risk:" + sid;
 
-  redisPipelineAppend(ctx_,
-                      "HSET %s "
-                      "daily_pnl %.4f "
-                      "order_count %d "
-                      "exposure %.4f",
+  redisAppendCommand(ctx_,
+                     "HSET %s "
+                     "daily_pnl %.4f "
+                     "order_count %d "
+                     "exposure %.4f",
 
-                      key.c_str(), daily_pnl, order_count, exposure);
+                     key.c_str(), daily_pnl, order_count, exposure);
 }
 
 void RedisClient::set_kill_switch(bool engaged) {
@@ -169,7 +169,7 @@ void RedisClient::set_kill_switch(bool engaged) {
 
   std::lock_guard lk(mtx_);
 
-  redisPipelineAppend(ctx_, "SET kill_switch %d", engaged ? 1 : 0);
+  redisAppendCommand(ctx_, "SET kill_switch %d", engaged ? 1 : 0);
 }
 
 void RedisClient::flush() {

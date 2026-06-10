@@ -138,13 +138,6 @@ void PreTradeRiskEngine::disengage_global_kill_switch() {
   LOG_WARN("[Risk] Global kill switch disengaged - trading resumed");
 }
 
-void PreTradeRiskEngine::disengage_global_kill_switch() {
-
-  global_kill_switch_.store(false, std::memory_order_release);
-
-  LOG_WARN("[Risk] Global kill switch disengaged - trading resumed");
-}
-
 bool PreTradeRiskEngine::is_strategy_halted(
     const std::string &id) const noexcept {
   std::lock_guard lk(halted_mtx_);

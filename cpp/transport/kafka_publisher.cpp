@@ -4,8 +4,8 @@
 
 #include "kafka_publisher.hpp"
 
+#include <cstring>
 #include <sstream>
-
 namespace qf {
 
 // ── Simple DR callback ─────────────────────────────────────────────
@@ -124,29 +124,6 @@ void KafkaPublisher::publish_tick(const NormalizedTick &tick) {
 
   published_.fetch_add(1, std::memory_order_relaxed);
 }
-
-void KafkaPublisher::publish_fill(const Fill &fill) {
-  if (!healthy_.load(std::memory_order_acquire) || !topic_fills_)
-    return;
-
-  std::string payload = serialize_fill(fill);
-
-  producer_->produce(topic_fills_.get(), RdKafka::Topic::PARTITION_UA,
-                     RdKafka::Producer::RK_MSG_COPY,
-                     const_cast<char *>(payload.data()), payload.size(),
-                     fill.strategy_id, std::strlen(fill.strategy_id), nullptr);
-
-  published_.fetch_add(1, std::memory_order_relaxed);
-}
-
-producer_->produce(topic_ticks_.get(),
-                   RdKafka::Topic::PARTITION_UA, // auto-partition by key
-                   RdKafka::Producer::RK_MSG_COPY,
-                   const_cast<char *>(payload.data()), payload.size(), &key_val,
-                   sizeof(key_val), nullptr);
-
-published_.fetch_add(1, std::memory_order_relaxed);
-} // namespace qf
 
 void KafkaPublisher::publish_fill(const Fill &fill) {
   if (!healthy_.load(std::memory_order_acquire) || !topic_fills_)

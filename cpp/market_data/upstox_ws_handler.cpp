@@ -13,14 +13,13 @@
 #include <regex>
 #include <sstream>
 
+#include "MarketDataFeed.pb.h" // FIXED: Gives the compiler the full definition of MarketDataFeed
 #include <boost/asio/strand.hpp>
 #include <boost/beast/http.hpp>
 #include <nlohmann/json.hpp>
 
 // Include protobuf generated header (compiled from Upstox V3 proto).
 // The .proto file is downloaded by proto/download_proto.py and compiled
-// by CMakeLists.txt via protoc.
-#include "MarketDataFeed.pb.h"
 
 namespace qf {
 
@@ -403,14 +402,11 @@ void UpstoxWSHandler::do_read() {
 
 void UpstoxWSHandler::on_frame(beast::flat_buffer &buf) {
   const auto *data = static_cast<const uint8_t *>(buf.data().data());
-
   size_t len = buf.data().size();
-
   decode_protobuf_frame(data, len);
 }
 void UpstoxWSHandler::decode_protobuf_frame(const uint8_t *data, size_t len) {
-  using namespace com::upstox::marketdatafeeder::rpc::proto;
-
+  using namespace com::upstox::marketdatafeederv3udapi::rpc::proto;
   // Record receive timestamp IMMEDIATELY (first thing).
   uint64_t recv_ts = static_cast<uint64_t>(
 
@@ -419,21 +415,17 @@ void UpstoxWSHandler::decode_protobuf_frame(const uint8_t *data, size_t len) {
           std::chrono::steady_clock::now().time_since_epoch())
           .count());
 
-  MarketDataFeed feed;
+  FeedResponse feed;
 
   if (!feed.ParseFromArray(data, static_cast<int>(len))) {
     decode_errors_.fetch_add(1, std::memory_order_relaxed);
-
     LOG_WARN("[WS] Protobuf parse failed ({} bytes)", len);
-
     return;
   }
 
   for (const auto &[key, feed_msg] : feed.feeds()) {
     NormalizedTick tick{};
-
     tick.instrument_token = std::hash<std::string>{}(key);
-
     tick.recv_ts_ns = recv_ts;
 
     // Copy symbol (truncated to MAX_SYMBOL_LEN - 1)
@@ -441,71 +433,40 @@ void UpstoxWSHandler::decode_protobuf_frame(const uint8_t *data, size_t len) {
 
     bool have_data = false;
 
-    if (feed_msg.has_ff()) {
+    if (feed_msg.has_ltpc()) {
+      const auto &ltpc = feed_msg.ltpc();
 
-      const auto &ff = feed_msg.ff();
+      tick.ltp = ltpc.ltp();
+      tick.prev_close = ltpc.cp();
+      tick.exchange_ts_ns = static_cast<uint64_t>(ltpc.ltt() * 1'000'000ULL);
 
-      if (ff.has_market_ff()) {
+      have_data = true;
+    } else if (feed_msg.has_fullfeed()) {
+      const auto &ff = feed_msg.fullfeed();
 
-        const auto &mff = ff.market_ff();
+      if (ff.has_marketff()) {
+        const auto &mff = ff.marketff();
 
-        if (mff.has_ltpc()) {
+        tick.ltp = mff.ltpc().ltp();
+        tick.prev_close = mff.ltpc().cp();
+        tick.volume = mff.vtt();
+        tick.oi = mff.oi();
 
-          tick.ltp = mff.ltpc().ltp();
-
-          tick.prev_close = mff.ltpc().cp();
-
-          tick.exchange_ts_ns =
-              static_cast<uint64_t>(mff.ltpc().ltt() * 1'000'000ULL);
-
-          have_data = true;
+        if (mff.marketlevel().bidaskquote_size() > 0) {
+          const auto &q = mff.marketlevel().bidaskquote(0);
+          tick.bid[0].price = q.bidp();
+          tick.bid[0].qty = q.bidq();
         }
-
-        if (ohlc.ohlc_size() > 0) {
-
-          auto &d = ohlc.ohlc(0);
-
-          tick.open = d.open();
-          tick.high = d.high();
-          tick.low = d.low();
-        }
-
-        tick.volume = static_cast<uint64_t>(mff.vtt());
-
-        tick.oi = static_cast<uint64_t>(mff.oi());
-        // Depth
-        for (int i = 0; i < std::min(mff.depth_size(), (int)DEPTH_LEVELS);
-             ++i) {
-          const auto &d = mff.depth(i);
-
-          if (i < (int)DEPTH_LEVELS) {
-
-            tick.bid[i].price = d.bid_price();
-            tick.bid[i].qty = d.bid_quantity();
-            tick.bid[i].orders = d.bid_orders();
-
-            tick.ask[i].price = d.ask_price();
-            tick.ask[i].qty = d.ask_quantity();
-            tick.ask[i].orders = d.ask_orders();
-          }
-        }
-      }
-    } else if (feed_msg.has_ltl()) {
-
-      // LTP-only feed
-      const auto &ltl = feed_msg.ltl();
-
-      if (ltl.has_ltpc()) {
-
-        tick.ltp = ltl.ltpc().ltp();
-
-        tick.prev_close = ltl.ltpc().cp();
-
-        tick.exchange_ts_ns =
-            static_cast<uint64_t>(ltl.ltpc().ltt()) * 1'000'000ULL;
 
         have_data = true;
       }
+    } else if (feed_msg.has_firstlevelwithgreeks()) {
+      const auto &fl = feed_msg.firstlevelwithgreeks();
+
+      tick.ltp = fl.ltpc().ltp();
+      tick.prev_close = fl.ltpc().cp();
+
+      have_data = true;
     }
 
     if (!have_data)

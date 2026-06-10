@@ -5,6 +5,7 @@
 // Pool is sized for 10 000 simultaneous orders.
 
 #pragma once
+#include <new>
 
 #include <array>
 #include <memory>
@@ -42,7 +43,8 @@ public:
 
     // Reset to clean state
     p->order = Order{};
-    p->sm = OrderStateMachine(OrderStatus::PENDING);
+    p->sm.~OrderStateMachine();
+    ::new (&p->sm) OrderStateMachine(OrderStatus::PENDING);
 
     return p;
   }

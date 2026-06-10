@@ -13,7 +13,7 @@
 #include <cstring>
 #include <string>
 #include <unordered_map>
-
+#include <vector>
 namespace qf {
 
 // ─────────────────────────────────────────────────────────────
@@ -152,10 +152,10 @@ struct alignas(64) NormalizedTick {
   int64_t latency_ns{0}; // recv - exchange (can be negative on drift)
 
   // flags
-  bool in_stable{false};
+  bool is_stale{false};
   bool is_index{false};
   bool is_option{false};
-  unit8_t _pad1[5]{};
+  uint8_t _pad1[5]{};
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -494,32 +494,6 @@ struct EngineConfig {
   bool dry_run{false};
 };
 
-// ─────────────────────────────────────────────────────────────
-// Market OrderBook (raw depth)
-// ─────────────────────────────────────────────────────────────
-
-struct OrderBook {
-
-  uint64_t instrument_token;
-
-  uint64_t ts_ns;
-
-  DepthLevel bid[DEPTH_LEVELS];
-
-  DepthLevel ask[DEPTH_LEVELS];
-};
-
-// ─────────────────────────────────────────────────────────────
-// Alert / kill signal
-// ─────────────────────────────────────────────────────────────
-
-enum class AlertLevel : uint8_t {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  HIGH = 3,
-  CRITICAL = 4
-};
 // ─────────────────────────────────────────────────────────────
 // Market OrderBook (raw depth)
 // ─────────────────────────────────────────────────────────────

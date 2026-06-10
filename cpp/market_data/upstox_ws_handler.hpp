@@ -27,21 +27,21 @@
 #include "../common/logger.hpp"
 #include "../common/spsc_queue.hpp"
 #include "../common/types.hpp"
-
+#include "MarketDataFeed.pb.h"
 // Forward-declare generated proto class
-namespace com {
-namespace upstox {
-namespace marketdatafeeder {
-namespace rest {
-namespace proto {
+// namespace com {
+// namespace upstox {
+// namespace marketdatafeeder {
+// namespace rest {
+// namespace proto {
 
-class MarketDataFeed;
+// class MarketDataFeed;
 
-}
-} // namespace rest
-} // namespace marketdatafeeder
-} // namespace upstox
-} // namespace com
+// }
+// } // namespace rest
+// } // namespace marketdatafeeder
+// } // namespace upstox
+// } // namespace com
 
 namespace qf {
 

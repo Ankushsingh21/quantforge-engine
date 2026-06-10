@@ -26,8 +26,8 @@
 
 #ifdef QUANTFORGE_REDIS_ENABLED
 
+#include <hiredis/async.h>
 #include <hiredis/hiredis.h>
-
 #include <memory>
 #include <mutex>
 #include <string>

@@ -13,7 +13,7 @@
 #include <unordered_map>
 
 #include "../../common/types.hpp"
-#include "./strategy_interface.hpp"
+#include "../strategy_interface.hpp"
 
 namespace qf {
 

@@ -37,7 +37,11 @@ public:
     std::string alerts{"risk.alerts"};
   };
 
-  explicit KafkaPublisher(const std::string &brokers, TopicNames topics = {});
+  // FIXED: Explicitly split the constructors to eliminate default parameter
+  // array bugs
+  explicit KafkaPublisher(const std::string &brokers, TopicNames topics);
+  explicit KafkaPublisher(const std::string &brokers)
+      : KafkaPublisher(brokers, TopicNames{}) {}
 
   ~KafkaPublisher();
 
@@ -79,9 +83,7 @@ private:
 
   std::atomic<bool> stop_{false};
   std::atomic<bool> healthy_{false};
-
   std::thread poll_thread_;
-
   std::atomic<uint64_t> published_{0};
   std::atomic<uint64_t> errors_{0};
 };

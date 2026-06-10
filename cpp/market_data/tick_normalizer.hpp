@@ -78,8 +78,8 @@ private:
   std::atomic<bool> stop_{false};
 
   std::atomic<uint64_t> ticks_processed_{0};
-  std::atomic<uint64_t> stale_dropped_{0};
-  std::atomic<uint64_t> sanity_rejected_{0};
+  mutable std::atomic<uint64_t> stale_dropped_{0};
+  mutable std::atomic<uint64_t> sanity_rejected_{0};
 
   static constexpr int64_t STALE_THRESHOLD_NS = 5'000'000'000LL; // 5s
 

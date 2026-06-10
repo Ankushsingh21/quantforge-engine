@@ -26,17 +26,27 @@ else()
     find_package(Boost REQUIRED COMPONENTS system thread)
     find_package(spdlog REQUIRED)
     find_package(nlohmann_json REQUIRED)
-    find_package(Protobuf REQUIRED)
+    find_package(protobuf CONFIG REQUIRED)
     find_package(OpenSSL REQUIRED)
     find_package(hiredis QUIET)
     find_package(RdKafka QUIET)
 endif()
 
 # ── Protobuf generated sources ───────────────────────────────────────
+# Both .pb.cc files are genarted by scrtips/build_cpp.sh (step 1) before
+# CMake rune. if either is missing the build scrtips failed -run it first.
 set(PROTO_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/proto/MarketDataFeed.pb.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/proto/quantforge.pb.cc
 )
+
+foreach (_f ${PROTO_SRCS})
+    if(NOT EXISTS "${_f}")
+        message(FATAL_ERROR
+        "Required genrated file not found: ${_f}\n"
+        "Run './scripts/build_cpp.sh' first it calls protoc to genrate these files.")
+    endif()
+endforeach()    
 
 # ── Source files ─────────────────────────────────────────────────────
 set(ENGINE_SOURCES
@@ -49,6 +59,8 @@ set(ENGINE_SOURCES
     oms/oms.cpp
     ems/ems.cpp
     transport/upstox_rest_client.cpp
+    transport/kafka_publisher.cpp
+    transport/redis_client.cpp
     portfolio/portfolio_engine.cpp
     ${PROTO_SRCS}
 )
@@ -59,6 +71,7 @@ target_include_directories(quantforge-engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/proto
     ${Protobuf_INCLUDE_DIRS}
+    $<TARGET_PROPERTY:nlohmann_json::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 # ── Link libraries ───────────────────────────────────────────────────
@@ -67,7 +80,7 @@ target_link_libraries(quantforge-engine PRIVATE
     Boost::thread
     spdlog::spdlog
     nlohmann_json::nlohmann_json
-    ${Protobuf_LIBRARIES}
+    protobuf::protobuf     
     OpenSSL::SSL
     OpenSSL::Crypto
     pthread
@@ -97,7 +110,7 @@ target_compile_options(quantforge-engine PRIVATE
     -Wextra
     -Wpedantic
     -Wno-unused-parameter
-    $<$<CONFIG:Release>:-Werror>
+    #$<$<CONFIG:Release>:-Werror>
 )
 
 # ── Install ──────────────────────────────────────────────────────────

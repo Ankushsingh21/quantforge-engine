@@ -38,46 +38,6 @@ double PriceSeries::atr(size_t period, const std::deque<double> &highs,
   return sum / period;
 }
 
-// strategy/plugins/momentum_strategy.cpp
-//
-// Full implementation of the EMA-crossover momentum strategy.
-//
-
-#include "momentum_strategy.hpp"
-
-#include <algorithm>
-#include <cmath>
-#include <ctime>
-
-namespace qf {
-
-// --- PriceSeries helpers --------------------------------------------
-
-double PriceSeries::atr(size_t period, const std::deque<double> &highs,
-                        const std::deque<double> &lows) const noexcept {
-  if (data_.size() < period + 1 || highs.size() < period ||
-      lows.size() < period)
-    return 0.0;
-
-  const size_t n = data_.size();
-
-  double sum = 0.0;
-
-  for (size_t i = n - period; i < n; ++i) {
-    double tr = highs[i] - lows[i];
-
-    if (i > 0) {
-      tr = std::max(tr, std::abs(highs[i] - data_[i - 1]));
-
-      tr = std::max(tr, std::abs(lows[i] - data_[i - 1]));
-    }
-
-    sum += tr;
-  }
-
-  return sum / period;
-}
-
 //-------momentum strategy------------------
 MomentumStrategy::MomentumStrategy() = default;
 StrategyInfo MomentumStrategy::info() const {

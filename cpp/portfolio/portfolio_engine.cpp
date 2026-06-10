@@ -1,7 +1,7 @@
 // portfolio/portfolio_engine.cpp
 
-#include "../common/thread_utils.hpp"
 #include "portfolio_engine.hpp"
+#include "../common/thread_utils.hpp"
 
 namespace qf {
 
@@ -175,14 +175,6 @@ double PortfolioEngine::available_capital() const {
 }
 
 // Lisfecycle and utility methods------------------------------
-
-void PortfolioEngine::load_positions(const std::vector<Position> &positions) {
-  std::unique_lock lk(snapshot_mtx_);
-  for (const auto &p : positions) {
-    snapshot_.positions[p.instrument_token] = p;
-  }
-  LOG_INFO("[Portfolio] Loaded {} positions from broker", positions.size());
-}
 
 void PortfolioEngine::load_positions(const std::vector<Position> &positions) {
   std::unique_lock lk(snapshot_mtx_);

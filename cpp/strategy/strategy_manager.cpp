@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 #include "../common/thread_utils.hpp"
-#include "../oms/oms.h"
+#include "../oms/oms.hpp"
 #include "../portfolio/portfolio_engine.hpp"
 #include "../risk/pre_trade_risk.hpp"
 
@@ -225,7 +225,7 @@ void StrategyManager::run_strategy_thread(LoadedStrategy &s) {
   LOG_INFO("[Strategy:{}] Thread stopped", s.config.id);
 }
 
-vvoid StrategyManager::dispatch_candle(const Candle &candle) {
+void StrategyManager::dispatch_candle(const Candle &candle) {
   std::lock_guard lk(mtx_);
 
   for (auto &s : strategies_) {
