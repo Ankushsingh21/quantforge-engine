@@ -28,7 +28,8 @@ void UpstoxRestClient::place_order(const OrderRequest &req,
     // exchange_id
 
     if (on_success)
-      on_success("{\"data\":{\"order_id\":\"PAPER-" + internal_oid + "\"}}");
+      on_success("{\"data\":{\"order_ids\":[\"PAPER-" + internal_oid +
+                 "\"]},\"status\":\"success\"}");
 
     return;
   }
@@ -42,7 +43,6 @@ void UpstoxRestClient::place_order(const OrderRequest &req,
   hreq.set(http::field::content_type, "application/json");
   hreq.set(http::field::user_agent, "quantforge-engine/1.0");
   hreq.set("Authorization", "Bearer " + access_token_);
-  hreq.set("Api-Version", API_VER);
 
   hreq.body() = body;
   hreq.prepare_payload();
@@ -66,7 +66,6 @@ void UpstoxRestClient::cancel_order(const std::string &exchange_oid,
   hreq.set(http::field::host, HFT_HOST);
   hreq.set(http::field::user_agent, "quantforge-engine/1.0");
   hreq.set("Authorization", "Bearer " + access_token_);
-  hreq.set("Api-Version", API_VER);
 
   hreq.prepare_payload();
 
@@ -95,7 +94,6 @@ void UpstoxRestClient::modify_order(const std::string &exchange_oid,
   hreq.set(http::field::content_type, "application/json");
   hreq.set(http::field::user_agent, "quantforge-engine/1.0");
   hreq.set("Authorization", "Bearer " + access_token_);
-  hreq.set("Api-Version", API_VER);
 
   hreq.body() = body_j.dump();
   hreq.prepare_payload();
@@ -111,7 +109,6 @@ void UpstoxRestClient::get_positions(SuccessCb on_success, ErrorCb on_error) {
   hreq.set(http::field::host, API_HOST);
   hreq.set(http::field::user_agent, "quantforge-engine/1.0");
   hreq.set("Authorization", "Bearer " + access_token_);
-  hreq.set("Api-Version", API_VER);
 
   hreq.prepare_payload();
 
@@ -126,7 +123,6 @@ void UpstoxRestClient::get_funds(SuccessCb on_success, ErrorCb on_error) {
   hreq.set(http::field::host, API_HOST);
   hreq.set(http::field::user_agent, "quantforge-engine/1.0");
   hreq.set("Authorization", "Bearer " + access_token_);
-  hreq.set("Api-Version", API_VER);
 
   hreq.prepare_payload();
 

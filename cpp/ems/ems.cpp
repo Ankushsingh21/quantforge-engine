@@ -35,9 +35,10 @@ void ExecutionManagementSystem::place_order(const OrderRequest &req,
 
           auto j = json::parse(body);
 
-          std::string exchange_oid =
-              j.at("data").at("order_id").get<std::string>();
-
+          // V3 response: data.order_ids is an array (support sliced array)
+          //  use the first order_id as the exchange reference for this request.
+          const auto $ids = j.at("data").at("order_ids");
+          std::string exchange_oid = ids.at(0).get<std::string>();
           if (on_ack)
             on_ack(exchange_oid);
 
